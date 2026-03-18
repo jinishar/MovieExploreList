@@ -11,6 +11,10 @@ class MovieRepository(db: AppDatabase) {
 
     private val rentalDao = db.rentalDao()
     private val TAG = "MovieRepository"
+    private companion object {
+        const val MIN_RENTAL_DAYS = 1
+        const val MAX_RENTAL_DAYS = 30
+    }
 
     // ---------- API ----------
     suspend fun fetchMovies(): List<Movie> {
@@ -54,12 +58,14 @@ class MovieRepository(db: AppDatabase) {
 
     suspend fun increaseRentalDays(movieId: Int) {
         val rental = rentalDao.getRentalByMovieId(movieId) ?: return
-        rentalDao.updateRentalDays(movieId, rental.days + 1)
+        if (rental.days < MAX_RENTAL_DAYS) {
+            rentalDao.updateRentalDays(movieId, rental.days + 1)
+        }
     }
 
     suspend fun decreaseRentalDays(movieId: Int) {
         val rental = rentalDao.getRentalByMovieId(movieId) ?: return
-        if (rental.days > 1) {
+        if (rental.days > MIN_RENTAL_DAYS) {
             rentalDao.updateRentalDays(movieId, rental.days - 1)
         }
     }

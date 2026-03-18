@@ -28,7 +28,6 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Suppress("UNUSED_PARAMETER", "UNUSED_VARIABLE", "ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
 fun MovieDetailScreen(
     movie: Movie,
     viewModel: MovieViewModel,
@@ -38,7 +37,7 @@ fun MovieDetailScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var showRentDialog by remember { mutableStateOf(false) }
+    var isProcessingRent by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.snackbarMessage.collect { msg ->
@@ -195,8 +194,17 @@ fun MovieDetailScreen(
 
                 // Rent Button
                 Button(
-                    onClick = { showRentDialog = true },
-                    enabled = !isRented,
+                    onClick = {
+                        if (isRented || isProcessingRent) return@Button
+                        scope.launch {
+                            isProcessingRent = true
+                            viewModel.rentMovie(movie)
+                            snackbarHostState.showSnackbar("${movie.title} added to rentals")
+                            onRentalSuccess()
+                            isProcessingRent = false
+                        }
+                    },
+                    enabled = !isRented && !isProcessingRent,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
@@ -208,112 +216,31 @@ fun MovieDetailScreen(
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(
-                        imageVector = if (isRented) Icons.Default.Check else Icons.Default.ShoppingCart,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (isRented) "Already Rented" else "Rent This Movie",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (isProcessingRent) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Processing...", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    } else {
+                        Icon(
+                            imageVector = if (isRented) Icons.Default.Check else Icons.Default.ShoppingCart,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isRented) "Already Rented" else "Rent This Movie",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
-
-    // Rent Confirmation Dialog
-    if (showRentDialog) {
-        AlertDialog(
-            onDismissRequest = { showRentDialog = false },
-            title = {
-                Text(
-                    text = "Confirm Rental",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "Rent \"${movie.title}\"?",
-                        fontSize = 14.sp
-                    )
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Daily Rate:",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                )
-                                Text(
-                                    text = CurrencyFormatter.formatPriceINR(movie.rentalPricePerDay),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = CinemaRed
-                                )
-                            }
-                            HorizontalDivider()
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "For 1 day:",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = CurrencyFormatter.formatPriceINR(movie.rentalPricePerDay),
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = CinemaRed
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showRentDialog = false
-                        scope.launch {
-                            viewModel.rentMovie(movie)
-                            kotlinx.coroutines.delay(300)
-                            onRentalSuccess()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = CinemaRed),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Rent Now", fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showRentDialog = false },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 }
-

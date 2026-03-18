@@ -128,6 +128,8 @@ fun RentalCard(
     onRemove: () -> Unit
 ) {
     val itemTotal = rental.rentalPricePerDay * rental.days
+    val canDecrease = rental.days > 1
+    val canIncrease = rental.days < 30
 
     Card(
         modifier = Modifier
@@ -244,14 +246,16 @@ fun RentalCard(
                         // Decrease button
                         FilledIconButton(
                             onClick = onDecrease,
+                            enabled = canDecrease,
                             modifier = Modifier.size(28.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         ) {
                             Icon(
                                 Icons.Default.Remove,
-                                contentDescription = "Decrease",
+                                contentDescription = "Decrease rental days",
                                 modifier = Modifier.size(12.dp)
                             )
                         }
@@ -278,14 +282,16 @@ fun RentalCard(
                         // Increase button
                         FilledIconButton(
                             onClick = onIncrease,
+                            enabled = canIncrease,
                             modifier = Modifier.size(28.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = CinemaRed
+                                containerColor = CinemaRed,
+                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         ) {
                             Icon(
                                 Icons.Default.Add,
-                                contentDescription = "Increase",
+                                contentDescription = "Increase rental days",
                                 modifier = Modifier.size(12.dp),
                                 tint = Color.White
                             )

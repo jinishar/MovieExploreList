@@ -2,6 +2,8 @@ package com.example.movieexplorelist.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,8 +11,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -40,10 +44,10 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     
     // Search and filter states
-    var searchQuery by remember { mutableStateOf("") }
-    var minRating by remember { mutableStateOf(0f) }
-    var maxPrice by remember { mutableStateOf(500.0) }
-    var showFilterDialog by remember { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var minRating by rememberSaveable { mutableStateOf(0f) }
+    var maxPrice by rememberSaveable { mutableStateOf(500.0) }
+    var showFilterDialog by rememberSaveable { mutableStateOf(false) }
 
     // Collect snackbar messages
     LaunchedEffect(Unit) {
@@ -113,29 +117,88 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Search bar
-            TextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
+            // Search bar (enhanced look)
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                placeholder = { Text("Search movies...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear")
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .shadow(6.dp, RoundedCornerShape(14.dp)),
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp
+            ) {
+                TextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search movies, e.g. Interstellar") },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = CinemaRed
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
                         }
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    )
                 )
-            )
+            }
+
+            // Quick filters (horizontally scrollable)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = minRating >= 8f,
+                    onClick = { minRating = if (minRating >= 8f) 0f else 8f },
+                    label = { Text("Top Rated") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(16.dp))
+                    }
+                )
+                FilterChip(
+                    selected = maxPrice <= 250.0,
+                    onClick = { maxPrice = if (maxPrice <= 250.0) 500.0 else 250.0 },
+                    label = { Text("Under ₹250") },
+                    leadingIcon = {
+                        Icon(Icons.Default.LocalOffer, contentDescription = null, modifier = Modifier.size(16.dp))
+                    }
+                )
+                if (searchQuery.isNotEmpty() || minRating > 0f || maxPrice < 500.0) {
+                    AssistChip(
+                        onClick = {
+                            searchQuery = ""
+                            minRating = 0f
+                            maxPrice = 500.0
+                        },
+                        label = { Text("Reset") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Clear, contentDescription = null, modifier = Modifier.size(16.dp))
+                        }
+                    )
+                }
+            }
             
             // Filter info
             if (searchQuery.isNotEmpty() || minRating > 0f || maxPrice < 500.0) {
