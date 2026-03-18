@@ -50,8 +50,9 @@ fun RentalScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "My Rentals",
-                        fontWeight = FontWeight.Bold
+                        text = "🛒 My Rentals",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
                     )
                 },
                 navigationIcon = {
@@ -60,7 +61,7 @@ fun RentalScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 )
             )
         },
@@ -79,13 +80,14 @@ fun RentalScreen(
                         onClick = onCheckout,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(56.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = CinemaRed),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = ButtonDefaults.elevatedButtonElevation(defaultElevation = 8.dp)
                     ) {
-                        Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Proceed to Checkout", fontWeight = FontWeight.Bold)
+                        Text("Proceed to Checkout", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
             }
@@ -99,9 +101,9 @@ fun RentalScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 12.dp)
+                contentPadding = PaddingValues(vertical = 12.dp, horizontal = 4.dp)
             ) {
                 items(rentals, key = { it.movieId }) { rental ->
                     RentalCard(
@@ -128,125 +130,166 @@ fun RentalCard(
     val itemTotal = rental.rentalPricePerDay * rental.days
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 140.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Poster
-            AsyncImage(
-                model = rental.posterUrl,
-                contentDescription = rental.title,
-                contentScale = ContentScale.Crop,
+            // Poster Image
+            Box(
                 modifier = Modifier
-                    .size(width = 70.dp, height = 100.dp)
-                    .clip(RoundedCornerShape(10.dp))
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Info
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = rental.title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    .size(width = 70.dp, height = 110.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.Gray)
+            ) {
+                AsyncImage(
+                    model = rental.posterUrl,
+                    contentDescription = rental.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
+                // Rating overlay
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp),
+                    shape = RoundedCornerShape(6.dp),
+                    color = GoldStar
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(10.dp)
+                        )
+                        Text(
+                            text = String.format("%.1f", rental.rating),
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Rating
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Star,
-                        contentDescription = null,
-                        tint = GoldStar,
-                        modifier = Modifier.size(14.dp)
-                    )
+            // Movie Info and Controls
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Title and Description
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Text(
-                        text = " ${String.format("%.1f", rental.rating)}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = rental.title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    
+                    Text(
+                        text = CurrencyFormatter.formatPriceINR(rental.rentalPricePerDay) + "/day",
+                        fontSize = 11.sp,
+                        color = CinemaRed,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    
+                    Text(
+                        text = "Total: " + CurrencyFormatter.formatPriceINR(itemTotal),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = GoldStar
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Price per day
-                Text(
-                    text = CurrencyFormatter.formatPriceINR(rental.rentalPricePerDay) + "/day",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Subtotal
-                Text(
-                    text = "Total: " + CurrencyFormatter.formatPriceINR(itemTotal),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
-                    color = GoldStar
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Days control
+                // Days Control
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "Days:",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Decrease button
-                    FilledIconButton(
-                        onClick = onDecrease,
-                        modifier = Modifier.size(30.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Remove,
-                            contentDescription = "Decrease",
-                            modifier = Modifier.size(14.dp)
+                        Text(
+                            text = "Days:",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
                         )
-                    }
+                        
+                        // Decrease button
+                        FilledIconButton(
+                            onClick = onDecrease,
+                            modifier = Modifier.size(28.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                            )
+                        ) {
+                            Icon(
+                                Icons.Default.Remove,
+                                contentDescription = "Decrease",
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
 
-                    // Days count
-                    Text(
-                        text = rental.days.toString(),
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                        // Days count
+                        Box(
+                            modifier = Modifier
+                                .width(32.dp)
+                                .height(28.dp)
+                                .background(
+                                    color = CinemaRed.copy(alpha = 0.1f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = rental.days.toString(),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = CinemaRed
+                            )
+                        }
 
-                    // Increase button
-                    FilledIconButton(
-                        onClick = onIncrease,
-                        modifier = Modifier.size(30.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = CinemaRed
-                        )
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Increase",
-                            modifier = Modifier.size(14.dp),
-                            tint = Color.White
-                        )
+                        // Increase button
+                        FilledIconButton(
+                            onClick = onIncrease,
+                            modifier = Modifier.size(28.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = CinemaRed
+                            )
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Increase",
+                                modifier = Modifier.size(12.dp),
+                                tint = Color.White
+                            )
+                        }
                     }
                 }
             }
@@ -254,13 +297,26 @@ fun RentalCard(
             // Remove button
             IconButton(
                 onClick = onRemove,
-                modifier = Modifier.align(Alignment.Top)
+                modifier = Modifier
+                    .size(40.dp)
+                    .align(Alignment.Top)
             ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Remove",
-                    tint = CinemaRed
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            color = CinemaRed.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(8.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Remove",
+                        tint = CinemaRed,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }
@@ -269,36 +325,41 @@ fun RentalCard(
 @Composable
 fun TotalPriceBar(totalPrice: Double, rentalCount: Int) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp)),
+        color = CinemaRed.copy(alpha = 0.1f),
         shadowElevation = 8.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
                 Text(
                     text = "$rentalCount movie${if (rentalCount > 1) "s" else ""} rented",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
                 )
                 Text(
                     text = "Total Price",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
+                    fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            Text(
-                text = CurrencyFormatter.formatPriceINR(totalPrice),
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 26.sp,
-                color = CinemaRed
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = CurrencyFormatter.formatPriceINR(totalPrice),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 28.sp,
+                    color = CinemaRed
+                )
+            }
         }
     }
 }
@@ -306,28 +367,51 @@ fun TotalPriceBar(totalPrice: Double, rentalCount: Int) {
 @Composable
 fun EmptyRentalState(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.MovieFilter,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                modifier = Modifier.size(80.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Card(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(24.dp)),
+                colors = CardDefaults.cardColors(containerColor = CinemaRed.copy(alpha = 0.1f))
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MovieFilter,
+                        contentDescription = null,
+                        tint = CinemaRed,
+                        modifier = Modifier.size(56.dp)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
             Text(
-                text = "No movies rented yet",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = "Your Rental Cart is Empty",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
             )
+            
             Spacer(modifier = Modifier.height(8.dp))
+            
             Text(
                 text = "Browse movies and rent your favorites!",
                 fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
     }
